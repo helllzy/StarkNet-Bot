@@ -50,7 +50,7 @@ DEPLOY_WALLETS = False
 "sith_swap",                                         |
 "avnu_swap",                                         |
 "starkex_swap",                                      |
-#"fibrous_swap" doesn`t work,mb you`ll find a mistake|
+"fibrous_swap"                                       |
 ----------------------|lending|----------------------|
 "zk_lending"                                         |
 ---------------------|liquidity|---------------------|
