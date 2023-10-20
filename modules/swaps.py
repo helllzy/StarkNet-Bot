@@ -3,6 +3,8 @@ from time import time
 from aiohttp import ClientError, ClientSession
 from fake_useragent import UserAgent
 
+from starknet_py.hash.selector import get_selector_from_name
+from starknet_py.net.client_models import Call
 from starknet_py.contract import Contract
 
 from config import SWAP_PERCENTAGES
@@ -31,8 +33,8 @@ from data.data import (
     SITH_ABI,
     AVNU_ADDRESS,
     AVNU_ABI,
-    # FIBROUS_ADDRESS,
-    # FIBROUS_ABI,
+    FIBROUS_ADDRESS,
+    FIBROUS_ABI,
     Module
 )
 
@@ -89,8 +91,8 @@ class Swap(Contract, Module):
             case "starkex_swap":
                 swap = await self.starkex()
 
-            # case "fibrous_swap":
-            #     swap = await self.fibrous()
+            case "fibrous_swap":
+                swap = await self.fibrous()
 
             case _:
                 print(f"WRONG MODULE {module}")
@@ -286,81 +288,69 @@ class Swap(Contract, Module):
         return swap
 
 
-    # async def fibrous(self):
-    #     super().__init__(
-    #         address=FIBROUS_ADDRESS,
-    #         abi=FIBROUS_ABI,
-    #         provider=self.account,
-    #         cairo_version=1
-    #     )
+    async def fibrous(self):
+        super().__init__(
+            address=FIBROUS_ADDRESS,
+            abi=FIBROUS_ABI,
+            provider=self.account,
+            cairo_version=1
+        )
 
-    #     swap_parameters = await self.fibrous_get_swap_data(
-    #         hex(self.token1), hex(self.token2), hex(self.balance_for_swap))
-    #     swap = self.functions['swap'].prepare(**swap_parameters)
-    #     print(swap)
+        swap_parameters = await self.fibrous_get_swap_data(
+            hex(self.token1), hex(self.token2), hex(self.balance_for_swap))
+        
+        swap = Call(
+            to_addr=self.address,
+            selector=get_selector_from_name('swap'),
+            calldata=swap_parameters
+        )
 
-    #     return swap
+        return swap
 
 
-    # async def fibrous_get_swap_data(
-    #     self, sell_token_address, buy_token_address, sell_amount) -> dict:
-    #     ua = UserAgent(os=["windows"], browsers=['chrome'])
-    #     headers = {
-    #         'Accept': 'application/json, text/plain, */*',
-    #         'Accept-Language': 'ru,en;q=0.9',
-    #         'Connection': 'keep-alive',
-    #         'Origin': 'https://app.fibrous.finance',
-    #         'Referer': 'https://app.fibrous.finance/',
-    #         'Sec-Fetch-Dest': 'empty',
-    #         'Sec-Fetch-Mode': 'cors',
-    #         'Sec-Fetch-Site': 'same-site',
-    #         'User-Agent': ua.random,
-    #     }
+    async def fibrous_get_swap_data(
+        self, sell_token_address, buy_token_address, sell_amount) -> dict:
+        ua = UserAgent(os=["windows"], browsers=['chrome'])
+        headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'ru,en;q=0.9',
+            'Connection': 'keep-alive',
+            'Origin': 'https://app.fibrous.finance',
+            'Referer': 'https://app.fibrous.finance/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': ua.random,
+        }
 
-    #     params = {
-    #         'amount': sell_amount,
-    #         'tokenInAddress': sell_token_address,
-    #         'tokenOutAddress': buy_token_address,
-    #     }
+        params = {
+            'amount': sell_amount,
+            'tokenInAddress': sell_token_address,
+            'tokenOutAddress': buy_token_address,
+            'slippage': 0.02,
+            'destination': hex(self.account.address)
+        }
 
-    #     async with ClientSession(headers=headers) as session:
-    #             async with session.get(
-    #                   'https://api.fibrous.finance/route', params=params) as response:
+        async with ClientSession(headers=headers) as session:
+                async with session.get(
+                      'https://api.fibrous.finance/execute', params=params) as response:
 
-    #                 if response.status == 200:
-    #                     data = await response.json()
-    #                     extra_data = data['route'][0]['swaps'][0][0].get('ekuboData')
+                    if response.status == 200:
+                        data = await response.json()
+                        swap_parameters = []
 
-    #                     if extra_data:
-    #                         extra_data = list(extra_data.values())
-    #                     else:
-    #                         extra_data = []
+                        for value in data:
+                            if isinstance(value, str):
+                                if value.startswith('0x'):
+                                    swap_parameters.append(int(value, 16))
+                                else:
+                                    swap_parameters.append(int(value))
+                            else:
+                                swap_parameters.append(value)
 
-    #                     swap_parameters = {
-    #                         'route':
-    #                             {
-    #                                 'token_in': int(data['inputToken']['address'], 16),
-    #                                 'token_out': int(data['outputToken']['address'], 16),
-    #                                 'amount_in': int(data['inputAmount'], 16),
-    #                                 'min_received': int(data['outputAmount'], 16),
-    #                                 'destination': self.account.address
-    #                             },
-    #                         'swap_parameters':
-    #                             [
-    #                                 {
-    #                                     'token_in': int(data['inputToken']['address'], 16),
-    #                                     'token_out': int(data['outputToken']['address'], 16),
-    #                                     'rate': 1000000,
-    #                                     'protocol_id': int(data['route'][0]['swaps'][0][0]['protocol']),
-    #                                     'pool_address': int(data['route'][0]['swaps'][0][0]['poolAddress'], 16),
-    #                                     'extra_data': extra_data
-    #                                 }
-    #                             ]
-    #                         }
-
-    #                     return swap_parameters
-    #                 else:
-    #                     raise ClientError(f'Response status {response.status}!')
+                        return swap_parameters
+                    else:
+                        raise ClientError(f'Response status {response.status}!')
 
 
     async def avnu_get_swap_data(
