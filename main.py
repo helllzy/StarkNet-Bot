@@ -1,3 +1,4 @@
+from sys import platform
 from asyncio import WindowsSelectorEventLoopPolicy, set_event_loop_policy, run
 from random import shuffle, sample, randint, choice
 from termcolor import cprint
@@ -118,19 +119,15 @@ async def wallet_proceeding(account: Account, key_id) -> None:
         if DEPLOY_WALLETS:
             ALL_MODULES.insert(0, "deploy")
 
-        balance = await check_balance(account)
-
         if WITHDRAW_FROM_OKX:
             ALL_MODULES.insert(0, "withdraw_from_okx")
         else:
+            balance = await check_balance(account)
+            
             if not balance:
                 return
-            elif isinstance(balance, int):
-                pass
             elif 'swap' in balance or balance == 'zk_lending':
                 ALL_MODULES.insert(0, balance)
-            else:
-                return
 
     info(f"Actual modules: {ALL_MODULES}")
     for module_id, module in enumerate(ALL_MODULES, start=1):
@@ -138,6 +135,9 @@ async def wallet_proceeding(account: Account, key_id) -> None:
 
         if module_id < len(ALL_MODULES):
             await sleeping(MOD_DELAY, "| Sleeping between modules", "yellow")
+
+    if not balance or not isinstance(balance, int):
+        balance = await account.get_balance()
 
     accs_result[str(hex(account.address))] = {
         "id": str(key_id),
@@ -163,6 +163,10 @@ async def module_proceeding(account: Account, module, retry=0):
 
 if __name__ == '__main__':
     cprint(choice(HELZY), choice(['green', 'magenta', 'light_cyan']))
+
     KEYS, accs_result = [key["private_key"] for key in WALLETS.values()], {}
-    set_event_loop_policy(WindowsSelectorEventLoopPolicy())
+
+    if platform.startswith("win"):
+        set_event_loop_policy(WindowsSelectorEventLoopPolicy())
+
     run(main())
