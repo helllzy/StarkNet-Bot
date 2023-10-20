@@ -126,8 +126,11 @@ async def wallet_proceeding(account: Account, key_id) -> None:
             
             if not balance:
                 return
+            elif isinstance(balance, int):
+                pass
             elif 'swap' in balance or balance == 'zk_lending':
                 ALL_MODULES.insert(0, balance)
+                balance = await account.get_balance()
 
     info(f"Actual modules: {ALL_MODULES}")
     for module_id, module in enumerate(ALL_MODULES, start=1):
@@ -135,9 +138,6 @@ async def wallet_proceeding(account: Account, key_id) -> None:
 
         if module_id < len(ALL_MODULES):
             await sleeping(MOD_DELAY, "| Sleeping between modules", "yellow")
-
-    if not balance or not isinstance(balance, int):
-        balance = await account.get_balance()
 
     accs_result[str(hex(account.address))] = {
         "id": str(key_id),
