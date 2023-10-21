@@ -121,6 +121,7 @@ async def wallet_proceeding(account: Account, key_id) -> None:
 
         if WITHDRAW_FROM_OKX:
             ALL_MODULES.insert(0, "withdraw_from_okx")
+            balance = await account.get_balance()
         else:
             balance = await check_balance(account)
             
