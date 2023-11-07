@@ -30,7 +30,7 @@ class Transaction(Contract, Module):
             case "transfer_to_okx":
                 txn = await self.transfer()
             case "deploy":
-                await self.account.deploy()
+                txn = await self.account.deploy()
             case _:
                 print(f"WRONG MODULE {module}")
         if txn:
