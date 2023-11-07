@@ -79,7 +79,7 @@ class CustomAccount(Account):
 
         if nonce > 0:
             info(f"| {hex(self.address)} already deployed", "cyan")
-            return 1
+            return 0
 
         deploy_account_tx = await self.sign_deploy_account_transaction(
             class_hash=self.argent_proxy_class_hash,
@@ -98,4 +98,4 @@ class CustomAccount(Account):
         await gateway_client.wait_for_tx(execution.transaction_hash)
 
         logger.success(f"| Deploy | Transaction accepted")
-        return 1
+        return 0
