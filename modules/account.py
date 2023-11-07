@@ -34,6 +34,9 @@ class CustomAccount(Account):
     def __init__(self, private_key: int):
         self.argent_proxy_class_hash = ARGENT_PROXY_CLASS_HASH
         self.key_pair = KeyPair.from_private_key(private_key)
+        call_data = [self.key_pair.public_key, 0]
+        self.constructor_calldata = [
+            ARGENT_IMPLEMENTATION_CLASS_HASH, SELECTOR, len(call_data), *call_data]
 
         for wallet in WALLETS.values():
             if wallet["private_key"] == private_key:
@@ -61,10 +64,6 @@ class CustomAccount(Account):
 
 
     def __get_argent_address(self) -> int:
-        call_data = [self.key_pair.public_key, 0]
-        self.constructor_calldata = [
-            ARGENT_IMPLEMENTATION_CLASS_HASH, SELECTOR, len(call_data), *call_data]
-
         address = compute_address(
             class_hash=self.argent_proxy_class_hash,
             constructor_calldata=self.constructor_calldata,
@@ -74,7 +73,7 @@ class CustomAccount(Account):
         return address
 
 
-    async def deploy(self, module) -> int:
+    async def deploy(self) -> int:
         gateway_client = GatewayClient(net="mainnet")
         nonce = await gateway_client.get_contract_nonce(self.address)
 
@@ -92,11 +91,11 @@ class CustomAccount(Account):
         execution = await gateway_client.deploy_account(deploy_account_tx)
 
         info(
-        f"| {module} | Waiting transaction: "
+        f"| Deploy | Waiting transaction: "
         f"https://starkscan.co/tx/{hex(execution.transaction_hash)}", "magenta"
         )
 
         await gateway_client.wait_for_tx(execution.transaction_hash)
 
-        logger.success(f"| {module} | Transaction accepted")
+        logger.success(f"| Deploy | Transaction accepted")
         return 1
