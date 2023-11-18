@@ -53,8 +53,9 @@ async def approve(contract_address, account, spender, amount):
     return approve
 
 
-async def check_balance(account) -> str | int | None:
-    while True:
+async def check_balance(account, retry=0) -> str | int | None:
+    while retry<5:
+        retry += 1
         try:
             for token in [None, USDT_ADDRESS, USDC_ADDRESS, \
                           DAI_ADDRESS, ZKLEND_ETH_ADDRESS, WBTC_ADDRESS]:
@@ -81,6 +82,8 @@ async def check_balance(account) -> str | int | None:
         except:
             logger.error('Got an error while checking balance, trying again in 10 secs')
             await sleep(10)
+        
+    return
 
 
 async def send_message(text) -> None:
