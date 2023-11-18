@@ -80,9 +80,11 @@ async def check_balance(account, retry=0) -> str | int | None:
 
                 await sleep(3)
         except:
-            logger.error('Got an error while checking balance, trying again in 10 secs')
+            logger.error('Got an error while checking balance, trying again in 10 secs ' \
+                        f'current retry: {retry}')
             await sleep(10)
-        
+    
+    logger.critical(f'Balance checking was failed after {retry} retries')
     return
 
 
