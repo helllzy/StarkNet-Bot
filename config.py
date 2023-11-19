@@ -41,8 +41,6 @@ DEPLOY_WALLETS = False
 
 '''
 -----------------|available modules|-----------------|
--- Don`t use "starkverse" cause project`s website    |
--- doesn`t work, it looks like sybil activity        |
 -----------------------|swaps|-----------------------|
 "jedi_swap",                                         |
 "10k_swap",                                          |
