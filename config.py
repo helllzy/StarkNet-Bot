@@ -58,6 +58,7 @@ DEPLOY_WALLETS = False
 "10k_liquidity",                                     |
 "sith_liquidity"                                     |
 ----------------|cheap transactions|-----------------|
+"starkverse",                                        |
 "collateral",                                        |
 "dmail",                                             |
 "starknet_id",                                       |
