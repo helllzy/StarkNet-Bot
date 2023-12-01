@@ -2,6 +2,7 @@ from sys import platform
 from asyncio import WindowsSelectorEventLoopPolicy, set_event_loop_policy, run
 from random import shuffle, sample, randint, choice
 from termcolor import cprint
+from json import load
 
 from starknet_py.net.gateway_client import GatewayClient
 
@@ -29,7 +30,9 @@ from config import (
     ZK_REPEATS,
     DEPLOY_WALLETS,
     EXACT_NONCE,
-    EXACT_NONCE_COUNT
+    EXACT_NONCE_COUNT,
+    UNUSED_CONTRACTS,
+    UNUSED_COUNT
 )
 from modules.utils import (
     sleeping,
@@ -57,7 +60,6 @@ ACTION = {
 async def main():
     if RANDOMIZE_WALLETS:
         shuffle(KEYS)
-
     for key_id, private in enumerate(KEYS, start=1):
         try:
             account = CustomAccount(private)
@@ -91,18 +93,38 @@ async def main():
 
 
 async def wallet_proceeding(account: Account, key_id) -> None:
-    ALL_MODULES = MODULES
-    if EXACT_NONCE:
-        gateway_client = GatewayClient(net="mainnet")
 
-        nonce = await gateway_client.get_contract_nonce(account.address)
-        trans_count = randint(*EXACT_NONCE_COUNT)-nonce
-        if trans_count > 0:
-            ALL_MODULES = sample(MODULES*1000, trans_count)
+    if UNUSED_CONTRACTS:
+        with open('data/unused_contracts.json') as file:
+            unused_contracts = load(file)
+
+        for address in unused_contracts.keys():
+
+            if address.lower()[-15:] == hex(account.address).lower()[-15:]:
+                MODS = unused_contracts.get(address)
+                break
+
+        if MODS:
+
+            if len(MODS) >= (unused_count := randint(*UNUSED_COUNT)):
+                ALL_MODULES = sample(MODS, unused_count)
+            else:
+                ALL_MODULES = [choice(MODS)]
         else:
             return
 
+    elif EXACT_NONCE:
+        gateway_client = GatewayClient(net="mainnet")
+
+        nonce = await gateway_client.get_contract_nonce(account.address)
+        trans_count = randint(*EXACT_NONCE_COUNT) - nonce
+
+        if trans_count > 0:
+            ALL_MODULES = sample(MODULES*1000, trans_count)
+        else: return
+
     else:
+        ALL_MODULES = MODULES
 
         if RANDOMIZE_MODULES:
             shuffle(ALL_MODULES)
@@ -121,7 +143,6 @@ async def wallet_proceeding(account: Account, key_id) -> None:
 
         if WITHDRAW_FROM_OKX:
             ALL_MODULES.insert(0, "withdraw_from_okx")
-            balance = await account.get_balance()
         else:
             balance = await check_balance(account)
             
