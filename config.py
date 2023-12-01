@@ -66,14 +66,27 @@ DEPLOY_WALLETS = False
 -----------------------------------------------------|
 '''
 
+# these module will execute contracts that your wallet didn`t use
+# all settings below bot won`t use
+# works only if you have unused contracts or will skip wallet
+# before the start you must use check_contracts.py
+UNUSED_CONTRACTS = True
+
+# how many unused contracts do you need for each account?
+# each account will choose his own count
+UNUSED_COUNT = [1, 1]
+
 # write there all modules from the table above you would like to complete
 MODULES = [
-    "collateral",
-    "dmail",
-    "starknet_id",
-    "flex_market",
-    "unframed_market",
-    "increase_limit"
+"starkverse",
+"collateral",                               
+"starknet_id",                           
+"flex_market",                        
+"unframed_market",
+"increase_limit",
+"starkex_swap",
+"myswap",
+"myswap"
 ]
 
 # True if you want to skip some modules. it's good for account's randomization
