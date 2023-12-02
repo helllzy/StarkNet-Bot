@@ -141,18 +141,19 @@ async def wallet_proceeding(account: Account, key_id) -> None:
         if DEPLOY_WALLETS:
             ALL_MODULES.insert(0, "deploy")
 
-        if WITHDRAW_FROM_OKX:
-            ALL_MODULES.insert(0, "withdraw_from_okx")
-        else:
-            balance = await check_balance(account)
-            
-            if not balance:
-                return
-            elif isinstance(balance, int):
-                pass
-            elif 'swap' in balance or balance == 'zk_lending':
-                ALL_MODULES.insert(0, balance)
-                balance = await account.get_balance()
+    if WITHDRAW_FROM_OKX:
+        ALL_MODULES.insert(0, "withdraw_from_okx")
+        balance = 0
+    else:
+        balance = await check_balance(account)
+        
+        if not balance:
+            return
+        elif isinstance(balance, int):
+            pass
+        elif 'swap' in balance or balance == 'zk_lending':
+            ALL_MODULES.insert(0, balance)
+            balance = await account.get_balance()
 
     info(f"Actual modules: {ALL_MODULES}")
     for module_id, module in enumerate(ALL_MODULES, start=1):
